@@ -2,11 +2,11 @@
 sequenceDiagram
     participant W as Wallet
     participant Kit as Contract Kit
-    participant Cache as Contract Cache
+    participant Cache as Contract Cache<br>(per stash)
     participant RGB as RGB Std Lib
-    participant Store as RGB Store
+    participant Store as RGB Store<br>(per stash)
     participant Index as RGB Index
-    participant Core as LNPBP Core Lib
+    participant Core as LNP/BP Core Lib
     participant VM as Schema Script + VM
     participant BN as Bitcoin Network
     participant RN as Client/Bifrost
@@ -57,6 +57,8 @@ sequenceDiagram
     RGB->>+W: Transaction,<br>Transitions[],<br>Anchor,<br>Consignment=ours
     deactivate RGB
 
+    Note right of W: For Lightning we<br>save Transition<br> and Consignment<br> for each state<br>update
+
     W-->>+RGB: publish&update()
     RGB->>RGB: consign()->Consignment=theirs
     par Publish & mine
@@ -67,26 +69,26 @@ sequenceDiagram
         RN->>-RGB: /confirms verification/
     end
 
-opt if succeeded
-    rect rgba(200,255,255)
-        Note over RGB: Atomic transaction
-        RGB->>+RGB: forget(Consignment=ours)
-        RGB->>Store: delete(...)
-        RGB->>Index: delete(...)
-        RGB->>+W: prune(...)
-        loop Per contract type
-            W->>Kit: prune(...)
-            Kit->>Cache: prune(...)
+    opt if succeeded
+        rect rgba(225,225,255)
+            Note over RGB: Atomic transaction
+            RGB->>+RGB: forget(Consignment=ours)
+            RGB->>Store: delete(...)
+            RGB->>Index: delete(...)
+            RGB->>+W: prune(...)
+            loop Per contract type
+                W->>Kit: prune(...)
+                Kit->>Cache: prune(...)
+            end
+            W-->>-RGB: bool
+            deactivate RGB
         end
-        W-->>-RGB: bool
-        deactivate RGB
+        alt If succeeded
+            Note over RGB: Commit transaction
+        else if failed
+            Note over RGB: Rollback transaction
+        end
     end
-    alt If succeeded
-        Note over RGB: Commit transaction
-    else if failed
-        Note over RGB: Rollback transaction
-    end
-end
 
     deactivate RGB
 
