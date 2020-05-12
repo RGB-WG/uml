@@ -42,8 +42,8 @@ sequenceDiagram
                 RGB->>RGB: get_matching_anchor(Index)
                 Note right of RGB: Fail the validation<br>if not found
 
-                RGB->>+Index: get_input_txes(Txid)
-                Index-->>-RGB: Transaction[]=input transaction
+                RGB->>+BN: get_input_txes(Txid)
+                BN-->>-RGB: Transaction[]=input transaction
                 RGB->>+Core: get_fee(Transaction, Transactions[])
                 Core-->>-RGB: u64=fee
 
@@ -53,9 +53,9 @@ sequenceDiagram
                 Core->>Core: Genesis,u64=fee->Supplement
                 Core->>+Core: txo_seal::verify(SealDefinition, Transaction, Witness, Supplement)
                 Core->>+Core: DBC::verify(Container,Message,Commitment)
-                Core->>-Core: bool
-                Core-->>-Core: bool
                 Core-->>-RGB: bool
+                deactivate Core
+                deactivate Core
             end
         end
     end
