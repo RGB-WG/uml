@@ -1,0 +1,82 @@
+sequenceDiagram
+    participant User
+    participant rgbcli as RGB Cli
+    participant fund as Fungible Daemon
+    participant stashd as Stash Daemon
+    participant core as RGB Core <br>(Consignment)
+    participant validator as RGB Core <br>(Validator)
+
+    activate rgbcli
+    User->>rgbcli: rgb-cli fungible validate <consignment file>
+    rgbcli->>rgbcli: Read Consigment File
+    alt if File OK
+        Note left of fund: Make Validation RPC Request 
+        rgbcli->>fund: fungible::Request::Validate(Consigment)
+    activate fund
+    else if Not OK
+        rgbcli-->>User: InputFileFormatErr(filename, err)
+    deactivate rgbcli
+    end
+
+    Note left of stashd: Make Validation RPC Request
+    fund->>stashd: stash::Request::Validate(consignment)
+    activate stashd
+    deactivate fund
+
+    
+    stashd->>stashd: Extract Schema from storage <br> (match by consignment.genesis.schema_id())
+    Note right of stashd: Stashd has TxResolver <br> (electrum by default)
+    rect rgba(204,255,204)
+        Note over core: No processing, Simple transfer
+        stashd->>core: Validate(schema, ElectrumTxResolver)
+        deactivate stashd
+        core->>+validator: Validate(self, schema, ElectrumTxResolver)
+    end
+
+    Note over validator: Validator structure initialised
+    validator->>validator: Init(consignment, ElectrumTxResolver)
+    
+    rect rgba(255,255,204)
+        Note over validator: Root validtion started
+        alt if schema_id not known
+        validator-->>core: Validation::Status::Failure::UnknownSchema
+        else if schema_id known
+        validator->>validator: Validate consignment genesis <br> with known schema
+        loop for each endpoint
+            validator->>validator: verify each endpoint <br> by reconstructing node graph <br> upto genesis. <br> validate_branch(schema, node) 
+        end
+        validator->>validator: Generate Status::Warning::ExcessiveTransition <br> if more transition node present in consignment <br> than required
+        end
+    end
+    
+    rect rgba(204, 255, 204)
+        Note over core: No processing, Simple transfer
+        validator-->>-core: Validation::Status <br> [unreseolved / failures / warnings / infos]
+        core-->>stashd: Validation::Status
+    end
+
+    rect rgba(255, 204, 255)
+    activate stashd 
+    Note over stashd: Consignment genesis added <br> without checking Status?
+    stashd->>stashd: Add consignment.genesis() <br> to storage 
+    end
+
+    stashd-->>fund: RPC::Reply(Validation Status)
+    deactivate stashd
+
+    rect rgba(255, 204, 255)
+    activate fund
+    Note over fund: Doesn't check for Reply::ValidationStatus?
+    fund->>fund: Checks if <br> RPC::Reply::Succeess || Reply::Failure 
+    end
+    fund-->>+rgbcli: Arc<Reply>
+    deactivate fund
+    
+    Note left of rgbcli: Follwoing messages are <br> displayed in stderr
+    alt if Reply::Failure(msg)
+        rgbcli-->>User: "Server returned error: {msg}"
+    else if Reply::ValidationStatus(status)
+        rgbcli-->>User: "Asset transfer validation report: {status}"
+    else if Anything else
+        rgbcli-->>-User: "Unexpected server error, <br> probably connecting with outdated client version"
+    end
