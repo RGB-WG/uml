@@ -1,0 +1,222 @@
+classDiagram
+   
+    Genesis --|> "1" Chain: Includes
+    Genesis --|> "1" Metadata: Includes
+    Genesis --|> "1" OwnedRights: Includes
+    Genesis --|> "1" PublicRights: Includes
+
+    Extension --|> "1" Metadata: Includes
+    Extension --|> "1" OwnedRights: Includes
+    Extension --|> "1" PublicRights: Includes
+    Extension --|> "1" ParentPublicRights: Includes
+
+    Transition --|> "1" Metadata: Includes
+    Transition --|> "1" OwnedRights: Includes
+    Transition --|> "1" PublicRights: Includes
+    Transition --|> "1" ParentOwnedRights: Includes
+
+
+    Assignments --|> "many" DeclarativeStartegy: Includes
+    Assignments --|> "many" PedersenStrategy: Includes
+    Assignments --|> "many" HashStrategy:P Includes
+
+    OwnedRights --|> "many" Assignments: Includes
+
+    class Genesis {
+        schema_id: SchemaId,
+        chain: Chain,      
+        metadata: Metadata,
+        owned_rights: OwnedRights,
+        public_rights: PublicRights,
+        script: SimplicityScript,
+
+        ConsensusCommit()
+        CommitEncode()
+        StrictEncode()
+        AutoConceal()
+        Node()
+
+        Genesis: with(...)
+        ContractId : contract_id()
+        SchemaId : schema_id()
+        Chain : chain()
+    }
+    
+
+    class Extension{
+        extension_type: ExtensionType,
+        contract_id: ContractId,
+        metadata: Metadata,
+        parent_public_rights: ParentPublicRights,
+        owned_rights: OwnedRights,
+        public_rights: PublicRights,
+        script: SimplicityScript,
+
+        ConsensusCommit()
+        CommitEncode(using_strict)
+        StrictEncode()
+        AutoConceal()
+        Node()
+
+        Extension : with(...)
+    }
+
+    class Transition {
+        transition_type: TransitionType,
+        metadata: Metadata,
+        parent_owned_rights: ParentOwnedRights,
+        owned_rights: OwnedRights,
+        public_rights: PublicRights,
+        script: SimplicityScript,
+
+        ConsensusCommit()
+        CommitEncode(using_strict)
+        StrictEncode()
+        AutoConceal()
+        Node()
+
+        Transition: with(...)
+    }
+
+    class Chain {
+    Mainnet,
+
+    Testnet3,
+
+    Regtest~BlockHash~,
+
+    Signet,
+
+    SignetCustom~BlockHash~,
+
+    LiquidV1,
+
+    Other~ChainParams~,
+
+    Signet : default()
+    ChainParams : chain_params()
+    BlockHash : as_genesis_hash()
+    Option<Self> : from_genesis_hash()
+    StrictEncode()
+    }
+
+    class Metadata {
+        Map[FieldType, Set[data::Revealed]]
+
+        CommitEncode(Merkelize)
+        StrictEncode()
+        Serde()
+        Iterarotr()
+
+        Vec<u/i/f/string*>:u/i/f/string*( FieldType)
+    }
+
+    class OwnedRights {
+        Map[OwnedRightsType, Assignments]   
+    }
+
+    class ParentOwnedRights {
+        Map[NodeId, Map[OwnedRightType, Vec<u16>]]
+    }
+
+    class ParentPublicRights{
+        Map[NodeId, Set[PublicRightType]
+    }
+
+    class Assignments{
+        Declarative  [Vec<DeclarativeStrategy>],
+        DiscreteFiniteField  [Vec<PedersenStrategy>],
+        CustomData  [Vec<HashStrategy>],
+
+
+    }
+
+    class DeclarativeStartegy{
+        Confidential
+        ---
+            seal_definition : seal::Confidential,
+            assigned_state : data::void,
+        ---
+        Revealed
+        ---
+            seal_definition : seal::Revealed,
+            assigned_state : data::void,
+        ---
+        ConfidentialSeal
+        ---
+            seal_definition : seal::Confidential,
+            assigned_state : data::void,
+        ---
+        ConfidentialAmount
+        ---
+            seal_definition : seal::Revealed,
+            assigned_state : data::void,
+        ---
+    }
+
+    class PedersenStrategy{
+        Confidential
+        ---
+            seal_definition : seal::Confidential,
+            assigned_state : value::Confidential,
+        ---
+        Revealed
+        ---
+            seal_definition : seal::Revealed,
+            assigned_state : value::Revealed,
+        ---
+        ConfidentialSeal
+        ---
+            seal_definition : seal::Confidential,
+            assigned_state : value::Revealed,
+        ---
+        ConfidentialAmount
+        ---
+            seal_definition : seal::Revealed,
+            assigned_state : value::Confidential,
+        ---
+    }
+
+    class HashStrategy{
+        Confidential
+        ---
+            seal_definition : seal::Confidential,
+            assigned_state : data::Confidential,
+        ---
+        Revealed
+        ---
+            seal_definition : seal::Revealed,
+            assigned_state : data::Revealed,
+        ---
+        ConfidentialSeal
+        ---
+            seal_definition : seal::Confidential,
+            assigned_state : data::Revealed,
+        ---
+        ConfidentialAmount
+        ---
+            seal_definition : seal::Revealed,
+            assigned_state : data::Confidential,
+        ---
+    }
+
+    class PublicRights{
+        Set[PublicRightType]
+    }
+
+
+    <<struct>> Genesis
+    <<struct>> Transition
+    <<struct>> Extension
+    <<enum>> Chain
+    <<struct>> Metadata
+    <<type>>OwnedRights
+    <<type>>ParentOwnedRights
+    <<type>>ParentPublicRights
+    <<enum>>Assignments
+    <<enum>>DeclarativeStartegy
+    <<enum>>PedersenStrategy
+    <<enum>>HashStrategy
+    <<type>>PublicRights
+
+
