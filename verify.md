@@ -16,7 +16,7 @@ sequenceDiagram
     W->>+Kit: apply(Consignment)
     Kit->>+RGB: verify(Consignment)
 
-    rect rgba(245,245,245)
+    rect rgba(33,33,33)
         Note over RGB: Schema<br>validation
         RGB->>+Core: validate(Schema,Genesis)
         Core-->>-RGB: status
@@ -26,7 +26,7 @@ sequenceDiagram
         end
     end
 
-    rect rgba(245,245,245)
+    rect rgba(33,33,33)
         Note over RGB: Single-use seal<br>verification
         loop Index anchors
             RGB->>+Core: script_pubkey(Anchor)
@@ -65,7 +65,7 @@ sequenceDiagram
     Index-->>-RGB: bool
     deactivate RGB
 
-    rect rgba(245,245,245)
+    rect rgba(33,33,33)
         Note over RGB: State evolution<br>verification
         loop Each transition in endpoints
             loop Each transition up to Genesis
